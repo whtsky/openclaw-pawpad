@@ -1,0 +1,41 @@
+{
+  "name": "openclaw-pawpad",
+  "version": "0.1.2",
+  "description": "Per-session task list and notes for OpenClaw agents",
+  "type": "module",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --import tsx test/smoke.ts",
+    "typecheck": "tsc"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "tasks",
+    "scratchpad",
+    "context-compaction"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "files": [
+    "index.ts",
+    "src/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "@sinclair/typebox": "0.34.48",
+    "@mariozechner/pi-agent-core": "*"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/whtsky/openclaw-pawpad.git"
+  }
+}

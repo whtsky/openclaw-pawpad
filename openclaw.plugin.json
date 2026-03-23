@@ -1,0 +1,19 @@
+{
+  "id": "openclaw-pawpad",
+  "name": "PawPad",
+  "description": "Per-session task list and notes for OpenClaw agents.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "warnCompletedTasks": {
+        "type": "number",
+        "description": "Soft warning threshold for completed tasks (default: 30)"
+      },
+      "warnNoteChars": {
+        "type": "number",
+        "description": "Soft warning threshold for note length in characters (default: 10000)"
+      }
+    }
+  }
+}
