@@ -48,25 +48,26 @@ function renderTask(task: Task): string {
 }
 
 function buildInjection(tasks: Task[], notes: string): string {
-  const header = "## 🐾 PawPad — Session Tasks & Notes";
+  const sections: string[] = [];
 
-  let taskSection = "";
   if (tasks.length > 0) {
     const sorted = sortTasks(tasks);
     const completed = tasks.filter((t) => t.status === "completed").length;
-    taskSection =
-      `### Tasks (${completed}/${tasks.length} done)\n` +
-      sorted.map(renderTask).join("\n");
+    const taskList = sorted.map(renderTask).join("\n");
+    sections.push(
+      `<pawpad-tasks description="PawPad session tasks (${completed}/${tasks.length} done)">\n${taskList}\n</pawpad-tasks>`
+    );
   }
 
-  let noteSection = "";
   if (notes.trim()) {
-    noteSection = "### Notes\n" + notes.trim();
+    sections.push(
+      `<pawpad-notes description="PawPad session notes">\n${notes.trim()}\n</pawpad-notes>`
+    );
   }
 
-  if (!taskSection && !noteSection) return "";
+  if (sections.length === 0) return "";
 
-  return [header, taskSection, noteSection].filter(Boolean).join("\n\n");
+  return sections.join("\n\n");
 }
 
 export function createInjectHook(stateDir: string) {

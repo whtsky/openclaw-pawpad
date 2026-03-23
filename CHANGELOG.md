@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Switched prompt injection format from plain Markdown headings to XML-wrapped Markdown (`<pawpad-tasks>`, `<pawpad-notes>`). This gives LLMs clearer semantic boundaries between PawPad's injected context and the rest of the system prompt, improving parsing reliability across providers. Content inside the tags remains Markdown.
+
 ## [0.1.3] - 2026-03-23
 
 ### Changed
