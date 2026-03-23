@@ -1,16 +1,12 @@
-name: Publish
+name: CI
 
 on:
   push:
-    tags:
-      - "v*"
-
-permissions:
-  id-token: write
-  contents: read
+    branches: [main]
+  pull_request:
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,9 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-          registry-url: "https://registry.npmjs.org"
           cache: npm
 
       - run: npm ci
       - run: npm test
-      - run: npm publish --provenance --access public
