@@ -140,7 +140,8 @@ describe("Inject Hook", () => {
     expect(typeof result?.appendSystemContext).toBe("string");
 
     const ctx = result!.appendSystemContext!;
-    expect(ctx).toContain("PawPad");
+    expect(ctx).toContain("<pawpad>");
+    expect(ctx).toContain("pawpad_tasks");
     expect(ctx).toContain("Build API");
     expect(ctx).toContain("[x]");
     expect(ctx).toContain("REST");

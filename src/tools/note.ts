@@ -37,11 +37,9 @@ export function createNoteTool(
     name: "pawpad_note",
     label: "PawPad Note",
     description:
-      "Read, write, or append to the per-session scratchpad. Use for freeform notes, context, decisions, or anything worth remembering within this session. " +
-      "Notes survive context compaction and are auto-injected into every prompt.\n\n" +
-      "Use this tool to preserve important context that would otherwise be lost during compaction: " +
-      "key decisions and their reasoning, user preferences discovered during conversation, intermediate results, " +
-      "and constraints. Information stored here persists across compaction cycles.",
+      "Persistent per-session scratchpad that survives context compaction. " +
+      'Use "read" to get notes, "write" to replace, "append" to add. ' +
+      "Store decisions, constraints, preferences, or any context worth preserving across compaction.",
     parameters: Parameters,
     async execute(
       _toolCallId: string,

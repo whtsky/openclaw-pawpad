@@ -55,19 +55,23 @@ function buildInjection(tasks: Task[], notes: string): string {
     const completed = tasks.filter((t) => t.status === "completed").length;
     const taskList = sorted.map(renderTask).join("\n");
     sections.push(
-      `<pawpad-tasks description="PawPad session tasks (${completed}/${tasks.length} done)">\n${taskList}\n</pawpad-tasks>`
+      `<tasks description="Session tasks (${completed}/${tasks.length} done)">\n${taskList}\n</tasks>`
     );
   }
 
   if (notes.trim()) {
     sections.push(
-      `<pawpad-notes description="PawPad session notes">\n${notes.trim()}\n</pawpad-notes>`
+      `<notes description="Session notes">\n${notes.trim()}\n</notes>`
     );
   }
 
   if (sections.length === 0) return "";
 
-  return sections.join("\n\n");
+  const preamble =
+    "Your persistent session state — survives context compaction.\n" +
+    "Update via pawpad_tasks and pawpad_note tools. Keep these current as you work.";
+
+  return `<pawpad>\n${preamble}\n\n${sections.join("\n\n")}\n</pawpad>`;
 }
 
 export function createInjectHook(stateDir: string) {

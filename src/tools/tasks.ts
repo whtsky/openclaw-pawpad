@@ -15,7 +15,7 @@ import {
 } from "../storage.js";
 
 const TaskSchema = Type.Object({
-  id: Type.String({ description: "Unique task identifier" }),
+  id: Type.String({ description: 'Unique stable short identifier (e.g. "t1", "setup-db"). Referenced by blockedBy.' }),
   content: Type.String({ description: "Brief task title in imperative form" }),
   description: Type.Optional(
     Type.String({
@@ -87,11 +87,9 @@ export function createTasksTool(
     name: "pawpad_tasks",
     label: "PawPad Tasks",
     description:
-      "Read or write the per-session task list. Use action \"read\" to get current tasks, or \"write\" with a full tasks array to replace them. " +
-      "Tasks survive context compaction and are auto-injected into every prompt. Supports priority (high/medium/low), descriptions, and blockedBy for dependency tracking.\n\n" +
-      "Use this tool to track tasks, goals, and progress for the current session. " +
-      "When working on complex or multi-step tasks, break them down and track each step here. Update status as you go (pending → in_progress → completed). " +
-      "This is your persistent memory for what needs to be done — information stored here survives context compaction.",
+      "Persistent per-session task list that survives context compaction. " +
+      'Use "read" to get current tasks, "write" to replace the full list. ' +
+      "Each task has an id, content, status (pending/in_progress/completed), and optional priority, description, and blockedBy fields.",
     parameters: Parameters,
     async execute(
       _toolCallId: string,
@@ -134,7 +132,18 @@ export function createTasksTool(
       const warnings = getWarnings(validatedTasks, cfg.warnCompletedTasks);
       await writeTasks(stateDir, sessionId, newState);
       const count = newState.tasks.length;
-      const msg = `Tasks updated (${count} task${count === 1 ? "" : "s"}).`;
+      const statusCounts = validatedTasks.reduce(
+        (acc, t) => {
+          acc[t.status] = (acc[t.status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+      const summary = (["in_progress", "pending", "completed"] as const)
+        .filter((s) => statusCounts[s])
+        .map((s) => `${statusCounts[s]} ${s}`)
+        .join(", ");
+      const msg = `Tasks updated (${count} task${count === 1 ? "" : "s"}${summary ? `: ${summary}` : ""}).`;
       return textResult(
         warnings.length > 0 ? msg + "\n\n" + warnings.join("\n") : msg
       );
