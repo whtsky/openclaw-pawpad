@@ -6,7 +6,7 @@
   "main": "index.ts",
   "license": "MIT",
   "scripts": {
-    "test": "node --import tsx test/smoke.ts",
+    "test": "vitest run",
     "typecheck": "tsc"
   },
   "keywords": [
@@ -32,7 +32,8 @@
   },
   "devDependencies": {
     "@mariozechner/pi-agent-core": "*",
-    "openclaw": "*"
+    "openclaw": "*",
+    "vitest": "^3"
   },
   "repository": {
     "type": "git",
