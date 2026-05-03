@@ -80,7 +80,8 @@ function getWarnings(
 
 export function createTasksTool(
   stateDir: string,
-  sessionId: string,
+  sessionKey: string,
+  legacySessionId: string | undefined,
   cfg: { warnCompletedTasks: number }
 ): AgentTool<typeof Parameters> {
   return {
@@ -96,7 +97,7 @@ export function createTasksTool(
       params: Params
     ): Promise<AgentToolResult<unknown>> {
       if (params.action === "read") {
-        const state = await readTasks(stateDir, sessionId);
+        const state = await readTasks(stateDir, sessionKey, legacySessionId);
         if (state.tasks.length === 0) {
           return textResult("No tasks recorded yet.");
         }
@@ -130,7 +131,7 @@ export function createTasksTool(
       };
 
       const warnings = getWarnings(validatedTasks, cfg.warnCompletedTasks);
-      await writeTasks(stateDir, sessionId, newState);
+      await writeTasks(stateDir, sessionKey, newState);
       const count = newState.tasks.length;
       const statusCounts = validatedTasks.reduce(
         (acc, t) => {

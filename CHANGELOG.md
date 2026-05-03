@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-03
+
+### Changed
+
+- **Breaking (storage layout):** Per-session data is now keyed by OpenClaw's stable `sessionKey` (e.g. `cli:default`, `discord:channel:123`) instead of the ephemeral `sessionId`. Tasks and notes now persist across `/new` and `/reset` for the same logical session, instead of resetting on each fresh conversation.
+- Storage paths changed from `<stateDir>/<sessionId>/` to `<stateDir>/<encodedSessionKey>/`, where path-unsafe characters (`:`, `/`) in the session key are replaced with `_` for the directory name.
+- The `before_prompt_build` hook now bails when `sessionKey` is missing from context (previously it bailed on missing `sessionId`).
+
+### Migration
+
+- Read-fallback only — no automatic file moves. On read, if the new `sessionKey`-based path is empty, pawpad falls back to the legacy `sessionId`-based path. The first `write`/`append` after upgrade lands in the new path; from then on the legacy directory is unused (orphaned) and you can delete it manually if desired.
+- If you want a clean cut, delete the entire pawpad state directory (`<openclaw-state-dir>/state/pawpad/`) before upgrading.
+
 ## [0.1.4] - 2026-03-23
 
 ### Changed

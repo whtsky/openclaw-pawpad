@@ -1,6 +1,12 @@
 /**
  * File-based storage for per-session tasks and notes.
- * Directory structure: <stateDir>/<sessionId>/tasks.json | notes.md
+ *
+ * Primary key is `sessionKey` (OpenClaw's stable session identifier — survives
+ * /new and /reset). For backwards compat with v0.1.x data keyed by the
+ * ephemeral `sessionId`, read fns accept an optional `legacySessionId` and
+ * fall back to that path on ENOENT. Writes always go to the sessionKey path.
+ *
+ * Directory structure: <stateDir>/<encodedSessionKey>/tasks.json | notes.md
  */
 
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
@@ -23,14 +29,27 @@ export interface TasksState {
   updatedAt: string;
 }
 
-// ── Session ID validation ──────────────────────────────────────────────────
+// ── Session key validation & encoding ──────────────────────────────────────
 
-// Match OpenClaw's own SAFE_SESSION_ID_RE: /^[a-z0-9][a-z0-9._-]{0,127}$/i
-const SESSION_ID_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/i;
+// sessionKey may contain `:` (e.g. `discord:channel:123`) and `/`. Allow the
+// charset OpenClaw can produce; reject anything that could traverse paths or
+// inject control bytes.
+const SESSION_KEY_RE = /^[a-zA-Z0-9._:/-]{1,256}$/;
 
-export function validateSessionId(id: string): string {
-  if (!SESSION_ID_RE.test(id)) {
-    throw new Error(`Invalid sessionId: ${id}`);
+// Legacy ephemeral sessionId regex — mirrors OpenClaw's SAFE_SESSION_ID_RE.
+const LEGACY_SESSION_ID_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/i;
+
+export function encodeSessionKey(key: string): string {
+  if (!SESSION_KEY_RE.test(key)) {
+    throw new Error(`Invalid sessionKey: ${key}`);
+  }
+  // Replace path-unsafe chars with "_" for the on-disk directory name.
+  return key.replace(/[:/]/g, "_");
+}
+
+export function validateLegacySessionId(id: string): string {
+  if (!LEGACY_SESSION_ID_RE.test(id)) {
+    throw new Error(`Invalid legacy sessionId: ${id}`);
   }
   return id;
 }
@@ -107,8 +126,12 @@ export function validateTasks(tasks: unknown[]): Task[] {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function sessionDir(stateDir: string, sessionId: string): string {
-  return path.join(stateDir, validateSessionId(sessionId));
+function sessionDir(stateDir: string, sessionKey: string): string {
+  return path.join(stateDir, encodeSessionKey(sessionKey));
+}
+
+function legacyDir(stateDir: string, sessionId: string): string {
+  return path.join(stateDir, validateLegacySessionId(sessionId));
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -125,33 +148,70 @@ async function atomicWrite(
   await rename(tmp, filePath);
 }
 
+function isENOENT(err: unknown): boolean {
+  return (
+    !!err &&
+    typeof err === "object" &&
+    "code" in err &&
+    (err as { code: unknown }).code === "ENOENT"
+  );
+}
+
+/**
+ * Read a file at the sessionKey path, falling back to the legacy sessionId
+ * path when the primary is missing. Returns `undefined` when nothing exists
+ * or any read fails for non-ENOENT reasons (logged).
+ */
+async function readWithFallback(
+  stateDir: string,
+  sessionKey: string,
+  legacySessionId: string | undefined,
+  filename: string
+): Promise<string | undefined> {
+  try {
+    return await readFile(path.join(sessionDir(stateDir, sessionKey), filename), "utf-8");
+  } catch (err) {
+    if (!isENOENT(err)) {
+      console.warn(`[pawpad] Failed to read ${filename}:`, err);
+      return undefined;
+    }
+  }
+  if (!legacySessionId) return undefined;
+  try {
+    return await readFile(path.join(legacyDir(stateDir, legacySessionId), filename), "utf-8");
+  } catch (err) {
+    if (!isENOENT(err)) {
+      console.warn(`[pawpad] Failed to read legacy ${filename}:`, err);
+    }
+    return undefined;
+  }
+}
+
 // ── Tasks ──────────────────────────────────────────────────────────────────
+
+const EMPTY_TASKS: TasksState = { tasks: [], updatedAt: "" };
 
 export async function readTasks(
   stateDir: string,
-  sessionId: string
+  sessionKey: string,
+  legacySessionId?: string
 ): Promise<TasksState> {
+  const raw = await readWithFallback(stateDir, sessionKey, legacySessionId, "tasks.json");
+  if (raw === undefined) return EMPTY_TASKS;
   try {
-    const p = path.join(sessionDir(stateDir, sessionId), "tasks.json");
-    const raw = await readFile(p, "utf-8");
     return JSON.parse(raw) as TasksState;
-  } catch (err: unknown) {
-    // File not found is expected (new session) — return empty
-    if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") {
-      return { tasks: [], updatedAt: "" };
-    }
-    // Other errors (corruption, permissions) — log warning, return empty
-    console.warn("[pawpad] Failed to read tasks:", err);
-    return { tasks: [], updatedAt: "" };
+  } catch (err) {
+    console.warn("[pawpad] Failed to parse tasks.json:", err);
+    return EMPTY_TASKS;
   }
 }
 
 export async function writeTasks(
   stateDir: string,
-  sessionId: string,
+  sessionKey: string,
   state: TasksState
 ): Promise<void> {
-  const dir = sessionDir(stateDir, sessionId);
+  const dir = sessionDir(stateDir, sessionKey);
   await ensureDir(dir);
   await atomicWrite(
     path.join(dir, "tasks.json"),
@@ -163,38 +223,32 @@ export async function writeTasks(
 
 export async function readNotes(
   stateDir: string,
-  sessionId: string
+  sessionKey: string,
+  legacySessionId?: string
 ): Promise<string> {
-  try {
-    const p = path.join(sessionDir(stateDir, sessionId), "notes.md");
-    return await readFile(p, "utf-8");
-  } catch (err: unknown) {
-    if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") {
-      return "";
-    }
-    console.warn("[pawpad] Failed to read notes:", err);
-    return "";
-  }
+  const raw = await readWithFallback(stateDir, sessionKey, legacySessionId, "notes.md");
+  return raw ?? "";
 }
 
 export async function writeNotes(
   stateDir: string,
-  sessionId: string,
+  sessionKey: string,
   content: string
 ): Promise<void> {
-  const dir = sessionDir(stateDir, sessionId);
+  const dir = sessionDir(stateDir, sessionKey);
   await ensureDir(dir);
   await atomicWrite(path.join(dir, "notes.md"), content);
 }
 
 export async function appendNotes(
   stateDir: string,
-  sessionId: string,
-  content: string
+  sessionKey: string,
+  content: string,
+  legacySessionId?: string
 ): Promise<void> {
-  const existing = await readNotes(stateDir, sessionId);
+  const existing = await readNotes(stateDir, sessionKey, legacySessionId);
   const newContent = existing
     ? existing.trimEnd() + "\n\n" + content
     : content;
-  await writeNotes(stateDir, sessionId, newContent);
+  await writeNotes(stateDir, sessionKey, newContent);
 }

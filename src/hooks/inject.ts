@@ -77,14 +77,14 @@ function buildInjection(tasks: Task[], notes: string): string {
 export function createInjectHook(stateDir: string) {
   return async (
     event: { prompt: string; messages: unknown[] },
-    ctx: { sessionId?: string }
+    ctx: { sessionKey?: string; sessionId?: string }
   ): Promise<{ appendSystemContext?: string } | void> => {
-    const sessionId = ctx.sessionId;
-    if (!sessionId) return;
+    const sessionKey = ctx.sessionKey;
+    if (!sessionKey) return;
 
     const [tasksState, notes] = await Promise.all([
-      readTasks(stateDir, sessionId),
-      readNotes(stateDir, sessionId),
+      readTasks(stateDir, sessionKey, ctx.sessionId),
+      readNotes(stateDir, sessionKey, ctx.sessionId),
     ]);
 
     const injection = buildInjection(tasksState.tasks, notes);

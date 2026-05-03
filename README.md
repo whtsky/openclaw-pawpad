@@ -10,7 +10,7 @@ When OpenClaw compresses old conversation turns, your agent loses track of what 
 
 PawPad stores a structured task list and freeform notes on disk, outside the context window. Before every agent turn, it injects them into the system prompt. The agent sees its full task list and notes on every turn, no matter how much context has been compacted.
 
-Data is isolated per session. Starting a new session (`/new` or `/reset`) gives you a clean slate.
+Data is isolated per session. PawPad keys storage by OpenClaw's stable `sessionKey`, so tasks and notes persist across `/new` and `/reset` within the same logical session (same Discord channel, same CLI session, etc.).
 
 ## Install
 

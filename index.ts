@@ -23,14 +23,14 @@ export default {
     const stateDir = path.join(baseStateDir, "state", "pawpad");
     const cfg = { ...DEFAULT_CONFIG, ...(api.pluginConfig as PawPadConfig) };
 
-    api.registerTool(((ctx: { sessionId?: string }) => {
-      const sessionId = ctx.sessionId ?? "default";
-      return createTasksTool(stateDir, sessionId, cfg);
+    api.registerTool(((ctx: { sessionKey?: string; sessionId?: string }) => {
+      const sessionKey = ctx.sessionKey ?? "default";
+      return createTasksTool(stateDir, sessionKey, ctx.sessionId, cfg);
     }) as Parameters<typeof api.registerTool>[0]);
 
-    api.registerTool(((ctx: { sessionId?: string }) => {
-      const sessionId = ctx.sessionId ?? "default";
-      return createNoteTool(stateDir, sessionId, cfg);
+    api.registerTool(((ctx: { sessionKey?: string; sessionId?: string }) => {
+      const sessionKey = ctx.sessionKey ?? "default";
+      return createNoteTool(stateDir, sessionKey, ctx.sessionId, cfg);
     }) as Parameters<typeof api.registerTool>[0]);
 
     api.on("before_prompt_build", createInjectHook(stateDir));

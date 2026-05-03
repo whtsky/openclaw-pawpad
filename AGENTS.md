@@ -6,8 +6,8 @@ Tasks and notes are stored on disk and re-injected into every prompt via the `be
 ## Key Design Decisions
 
 - This is a **plugin** (not a skill or context engine). Use `api.registerTool()` for tools and `api.on()` for hooks — never `registerContextEngine`.
-- Use `sessionId` (ephemeral, changes on `/new`) not `sessionKey` for per-conversation isolation.
-- Storage paths: `<stateDir>/<sessionId>/tasks.json` and `<stateDir>/<sessionId>/notes.md`. Use `api.runtime.state.resolveStateDir()` to get the base.
+- Use `sessionKey` (OpenClaw's stable session identifier — survives `/new` and `/reset`) as the primary storage key. The plugin also accepts the ephemeral `sessionId` as an optional read-only fallback for v0.1.x data.
+- Storage paths: `<stateDir>/<encodedSessionKey>/tasks.json` and `<stateDir>/<encodedSessionKey>/notes.md`. `encodeSessionKey` replaces `:` and `/` with `_` so the key is filesystem-safe. Use `api.runtime.state.resolveStateDir()` to get the base.
 - Injection uses `appendSystemContext` (not `prependSystemContext`) so it gets cached by providers.
 - No truncation — all tasks and notes are injected as-is. Soft warnings nudge the agent to clean up, but nothing is enforced.
 - All file I/O is async with graceful ENOENT handling.

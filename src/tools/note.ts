@@ -30,7 +30,8 @@ function textResult(text: string): AgentToolResult<unknown> {
 
 export function createNoteTool(
   stateDir: string,
-  sessionId: string,
+  sessionKey: string,
+  legacySessionId: string | undefined,
   cfg: { warnNoteChars: number }
 ): AgentTool<typeof Parameters> {
   return {
@@ -46,7 +47,7 @@ export function createNoteTool(
       params: Params
     ): Promise<AgentToolResult<unknown>> {
       if (params.action === "read") {
-        const notes = await readNotes(stateDir, sessionId);
+        const notes = await readNotes(stateDir, sessionKey, legacySessionId);
         if (!notes) return textResult("No notes recorded yet.");
         const warning =
           notes.length > cfg.warnNoteChars
@@ -62,7 +63,7 @@ export function createNoteTool(
       }
 
       if (params.action === "write") {
-        await writeNotes(stateDir, sessionId, params.content);
+        await writeNotes(stateDir, sessionKey, params.content);
         const warning =
           params.content.length > cfg.warnNoteChars
             ? `\n⚠️ Notes are ${params.content.length} characters. Consider condensing.`
@@ -71,8 +72,8 @@ export function createNoteTool(
       }
 
       // append
-      await appendNotes(stateDir, sessionId, params.content);
-      const total = await readNotes(stateDir, sessionId);
+      await appendNotes(stateDir, sessionKey, params.content, legacySessionId);
+      const total = await readNotes(stateDir, sessionKey);
       const warning =
         total.length > cfg.warnNoteChars
           ? `\n⚠️ Notes are now ${total.length} characters. Consider condensing.`

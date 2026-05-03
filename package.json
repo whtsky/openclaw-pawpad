@@ -1,6 +1,6 @@
 {
   "name": "openclaw-pawpad",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Per-session task list and notes for OpenClaw agents",
   "type": "module",
   "main": "index.ts",
