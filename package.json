@@ -1,13 +1,20 @@
 {
   "name": "openclaw-pawpad",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Per-session task list and notes for OpenClaw agents",
   "type": "module",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prepack": "npm run clean && npm run build"
   },
   "keywords": [
     "openclaw",
@@ -18,21 +25,23 @@
   ],
   "openclaw": {
     "extensions": [
-      "./index.ts"
+      "./dist/index.js"
     ]
   },
   "files": [
-    "index.ts",
-    "src/",
+    "dist/",
     "openclaw.plugin.json",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "dependencies": {
     "@sinclair/typebox": "0.34.48"
   },
   "devDependencies": {
-    "@mariozechner/pi-agent-core": "*",
-    "openclaw": "*",
+    "@mariozechner/pi-agent-core": "^0.73.0",
+    "openclaw": "^2026.5.4",
+    "typescript": "^6.0.3",
     "vitest": "^3"
   },
   "repository": {

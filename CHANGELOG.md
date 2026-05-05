@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-05
+
+### Fixed
+
+- `registerTool` calls now pass the tool name via the second-argument options (`{ name: "pawpad_tasks" }`, `{ name: "pawpad_note" }`). Without this, the OpenClaw runtime cannot resolve the second factory-registered tool, so `pawpad_note` was effectively missing on installs.
+- Added `contracts.tools` and `activation` (`onStartup: true`, `onCapabilities: ["tool", "hook"]`) to `openclaw.plugin.json` so the runtime discovers the plugin's tools and loads it at gateway startup without waiting for narrower triggers.
+- Set `enabledByDefault: true` so installs activate the plugin without requiring an explicit `plugins.entries.openclaw-pawpad.enabled = true` toggle in user config.
+
+### Changed
+
+- The npm package now ships compiled JavaScript (`dist/`) instead of raw TypeScript sources. `package.json#main` and `openclaw.extensions` point at `./dist/index.js`; `prepack` runs `tsc -p tsconfig.build.json` so the build is guaranteed fresh on publish. Source `.ts` files are no longer included in the tarball.
+- Bumped `openclaw` dev dep to `^2026.5.4` and `@mariozechner/pi-agent-core` to `^0.73.0`. Declared `typescript` as an explicit devDependency (it was previously pulled in transitively).
+- Declared `engines.node >= 22.14.0` to match OpenClaw 2026.5.x's runtime requirement.
+
 ## [0.2.0] - 2026-05-03
 
 ### Changed

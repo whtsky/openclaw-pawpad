@@ -2,6 +2,14 @@
   "id": "openclaw-pawpad",
   "name": "PawPad",
   "description": "Per-session task list and notes for OpenClaw agents.",
+  "enabledByDefault": true,
+  "contracts": {
+    "tools": ["pawpad_tasks", "pawpad_note"]
+  },
+  "activation": {
+    "onStartup": true,
+    "onCapabilities": ["tool", "hook"]
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
